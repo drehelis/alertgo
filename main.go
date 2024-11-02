@@ -11,40 +11,39 @@ import (
 )
 
 func monitorAlerts(client *http.Client, initCfg config.InitConfig) chan error {
-    errCh := make(chan error)
-    ticker := time.NewTicker(initCfg.PollInterval)
-    seenAlerts := make(map[string]*types.MessageState)
+	errCh := make(chan error)
+	ticker := time.NewTicker(initCfg.PollInterval)
+	seenAlerts := make(map[string]*types.MessageState)
 
-    go func() {
-        // Fetch on start because why wait? :P
-        alrt, err := alerts.FetchAlerts(client, initCfg)
-        if err != nil {
-            errCh <- err
-        } else {
-            alerts.ProcessAlerts(alrt, seenAlerts, initCfg)
-        }
+	go func() {
+		// Fetch on start because why wait? :P
+		alrt, err := alerts.FetchAlerts(client, initCfg)
+		if err != nil {
+			errCh <- err
+		} else {
+			alerts.ProcessAlerts(alrt, seenAlerts, initCfg)
+		}
 
-        // Fetch with regular interval
-        for range ticker.C {
-            alrt, err := alerts.FetchAlerts(client, initCfg)
-            if err != nil {
-                errCh <- err
-                continue
-            }
-            alerts.ProcessAlerts(alrt, seenAlerts, initCfg)
-        }
-    }()
+		// Fetch with regular interval
+		for range ticker.C {
+			alrt, err := alerts.FetchAlerts(client, initCfg)
+			if err != nil {
+				errCh <- err
+				continue
+			}
+			alerts.ProcessAlerts(alrt, seenAlerts, initCfg)
+		}
+	}()
 
-    return errCh
+	return errCh
 }
 
-
 func main() {
-    cfg, err := config.LoadConfig()
-    if err != nil {
-        panic(err)
-    }
-	
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		panic(err)
+	}
+
 	httpClient := &http.Client{
 		Timeout: time.Second * 10,
 	}
@@ -61,4 +60,3 @@ func main() {
 		log.Printf("Error fetching alerts: %v\n", err)
 	}
 }
-
